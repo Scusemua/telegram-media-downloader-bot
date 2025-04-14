@@ -6,7 +6,7 @@ authors = [
     { name = "Ben Carver", email = "benrcarver@gmail.com" }
 ]
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.8"
 
 dependencies = [

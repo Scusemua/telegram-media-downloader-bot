@@ -1,5 +1,6 @@
 import os
 import logging
+from argparse import ArgumentParser
 from typing import List
 
 from dotenv import load_dotenv
@@ -9,40 +10,36 @@ from telegram.ext import ApplicationBuilder, Application
 
 from telegram_media_downloader_bot.bot import MediaDownloaderBot
 
-# Enable logging
-logging.basicConfig(
-    # Set the minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    level=logging.INFO,
-    # Customize log format
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',  # Customize datetime format
-    handlers=[logging.StreamHandler()]  # Explicitly send to console
-)
-logger = logging.getLogger(__name__)
-
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN: str = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-BOT_PASSWORD: str = os.environ.get("BOT_PASSWORD", "")
-PREAUTHENTICATED_CHAT_IDS: str = os.environ.get("CHAT_IDS", "")
+parser = ArgumentParser()
+parser.add_argument("-t", "--token", type = str, default = "", help = "Telegram bot token. You may also specify this via the `TELEGRAM_BOT_TOKEN` environment variable.")
+parser.add_argument("-p", "--password", type = str, default = "", help = "Telegram bot password. If specified, only chats authenticated with this password (via the /auth <password> command) will be able to use the bot. You may also specify this via the `BOT_PASSWORD` environment variable.")
+parser.add_argument("-c", "--chat-ids", type = str, nargs = "*", default=[], help = "List of Telegram chat IDs to authenticate immediately (i.e., without needing to use the /auth <password> command from the chat). You may also specify this via the `PREAUTHENTICATED_CHAT_IDS` environment variable as a comma-separated list.")
 
-if TELEGRAM_BOT_TOKEN == "":
+args = parser.parse_args()
+
+token: str = os.environ.get("TELEGRAM_BOT_TOKEN", args.token)
+if token == "":
     raise ValueError("No Telegram bot token specified")
 
-app: Application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
+bot_password: str = os.environ.get("BOT_PASSWORD", args.password)
+preauthenticated_chat_ids: str | List[str] = os.environ.get("CHAT_IDS", args.chat_ids)
 
-if PREAUTHENTICATED_CHAT_IDS is not None and PREAUTHENTICATED_CHAT_IDS != "":
-    preauthenticated_chat_ids: List[str] = PREAUTHENTICATED_CHAT_IDS.split(",")
+app: Application = ApplicationBuilder().token(token).build()
+
+if preauthenticated_chat_ids is not None and isinstance(preauthenticated_chat_ids, str) and preauthenticated_chat_ids != "":
+    preauthenticated_chat_ids = preauthenticated_chat_ids.split(",")
 else:
-    preauthenticated_chat_ids: List[str] = []
+    preauthenticated_chat_ids = []
 
 bot: MediaDownloaderBot = MediaDownloaderBot(
-    token=TELEGRAM_BOT_TOKEN,
-    password=BOT_PASSWORD,
+    token=token,
+    password=bot_password,
     preauth_chat_ids=preauthenticated_chat_ids,
 )
 
 bot.init_handlers(app)
 
-logger.info("Bot is running...")
+print("🤖 Bot is running...")
 app.run_polling(allowed_updates=Update.ALL_TYPES)

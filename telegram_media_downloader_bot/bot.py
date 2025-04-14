@@ -7,9 +7,10 @@ from telegram import Update
 from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application
 from telegram import Update
 
+LOGGER_FORMAT:str = '%(asctime)s | %(levelname)s | %(message)s | %(name)s | %(funcName)s'
 
 class MediaDownloaderBot(object):
-    def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str]] = None):
+    def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str]] = None, logger_format:str = LOGGER_FORMAT):
         self._authenticated_chats = set()
         self._user_to_group = {}
 
@@ -18,6 +19,15 @@ class MediaDownloaderBot(object):
         self._preauth_chat_ids: List[str] = preauth_chat_ids or []
 
         self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        # Create a handler and set the formatter
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(logger_format)
+        handler.setFormatter(formatter)
+
+        # Add the handler to the logger
+        self.logger.addHandler(handler)
 
         for preauth_chat_id in self._preauth_chat_ids:
             self.logger.debug(f'Pre-autenticating chat "{preauth_chat_id}"')

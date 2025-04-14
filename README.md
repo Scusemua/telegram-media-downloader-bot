@@ -60,6 +60,11 @@ To authenticate a chat, use the `/auth <bot_password>` command in the Telegram c
 
 The `CHAT_IDS` environment variable enables you to "pre-authenticate" some Telegram group chats/private message chats that will work immediately, without having to first use the bot's `/auth <bot_password>` command.
 
+**Note:** these arguments can also be passed as command line arguments. For a description of the available command line arguments, execute the following:
+``` shell
+python -m telegram_media_downloader_bot --help 
+```
+
 # ▶️ Usage
 
 Start the bot with:

@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+certificate.crt
+privatekey.key
+
 # C extensions
 *.so
 

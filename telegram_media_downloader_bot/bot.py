@@ -5,9 +5,10 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import uuid
 import yt_dlp
+from telegram import InlineQueryResultVideo, Update
+from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application, InlineQueryHandler
 from telegram import Update
-from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application
-from telegram import Update
+import threading
 
 LOGGER_FORMAT: str = '%(asctime)s | %(levelname)s | %(message)s | %(name)s | %(funcName)s'
 
@@ -34,18 +35,22 @@ class MediaDownloaderBot(object):
         password: Optional[str] = "",
         preauth_chat_ids: Optional[List[str]] = None,
         admin_user_id: str = "",
-        bot_user_id:str = "",
+        bot_user_id: str = "",
+        public_ipv4: str = "",
+        http_port: int = 8081,
         auth_timeout: int = DEFAULT_AUTH_TIMEOUT,
         logger_format: str = LOGGER_FORMAT
     ):
         self._authenticated_chats = set()
         self._user_to_group = {}
 
+        self._http_port: int = http_port
         self._bot_user_id: str = bot_user_id
         self._auth_timeout: int = auth_timeout
         self._admin_user_id: str = admin_user_id
         self._token: str = token
         self._password: Optional[str] = password
+        self._public_ipv4: str = public_ipv4
         self._preauth_chat_ids: List[str] = preauth_chat_ids or []
 
         # Dictionary to track group join times
@@ -83,7 +88,7 @@ class MediaDownloaderBot(object):
         app.add_handler(MessageHandler(
             filters.StatusUpdate.NEW_CHAT_MEMBERS, self.handle_new_chat))
 
-        # app.add_handler(InlineQueryHandler(self.inline_download_command))
+        app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
 
     async def clear_auth_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -220,7 +225,7 @@ class MediaDownloaderBot(object):
 
         await self._handle_download_request(text, update)
 
-    async def _handle_download_request(self, text: str, update: Update):
+    async def _handle_download_request(self, text: str, update: Update, delete_after_reply: bool = True):
         """
         Generic handler for messages and download commands.
         """
@@ -241,15 +246,16 @@ class MediaDownloaderBot(object):
             if prefix in text:
                 try:
                     # Download the video
-                    video_path = f"{str(uuid.uuid4())}.mp4"
+                    video_path = f"./video/{str(uuid.uuid4())}.mp4"
                     self.logger.info(
                         f'\nWill save reel to file "{video_path}"\n')
                     self._download_media(text, output_path=video_path)
                     self.logger.info(
                         "Successfully downloaded Instagram reel.\n\n")
                     await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
-                    os.remove(video_path)
-                    self._num_downloads += 1
+
+                    if delete_after_reply:
+                        os.remove(video_path)
 
                 except Exception as e:
                     self.logger.error(f"Error: {e}")
@@ -260,22 +266,22 @@ class MediaDownloaderBot(object):
         """Handle when the bot is added to a new group."""
         chat = update.effective_chat
         assert chat
-        
-        print("chat.type:", chat.type)
-        
+
         if not self._password or not update.message or chat.type not in ["group", "supergroup"]:
-            return 
-        
-        new_chat_participant: Optional[Dict[str, Any]] = update.message.api_kwargs.get("new_chat_participant", None)
+            return
+
+        new_chat_participant: Optional[Dict[str, Any]] = update.message.api_kwargs.get(
+            "new_chat_participant", None)
         if not new_chat_participant:
-            return 
-        
+            return
+
         new_chat_participant_id: str = str(new_chat_participant.get("id", ""))
         if new_chat_participant_id == "" or new_chat_participant_id != self._bot_user_id:
-            return 
+            return
 
         chat_id = chat.id
-        self.logger.info(f"TelegramMediaDownloaderBot added to new group: {chat.title} (ID: {chat_id})")
+        self.logger.info(
+            f"TelegramMediaDownloaderBot added to new group: {chat.title} (ID: {chat_id})")
 
         # Send welcome message with instructions
         await context.bot.send_message(
@@ -333,40 +339,39 @@ class MediaDownloaderBot(object):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
 
-    # async def inline_download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    #     query = update.inline_query.query
+        self._num_downloads += 1
 
-    #     print(f'Received inline download query: "{query}"')
+    async def inline_download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        assert update.inline_query is not None
+        query = update.inline_query.query
 
-    #     if not query:  # empty query should not be handled
-    #         return
+        self.logger.info(f'Received inline download query: "{query}"')
+        self.logger.info(update)
 
-    #     self.logger.info(f'Received inline download query: "{query}"')
+        if not query:  # empty query should not be handled
+            return
 
-    #     if 'instagram.com/reel/' not in query and 'instagram.com/p/' not in query:
-    #         return
+        self.logger.info(f'Received inline download query: "{query}"')
 
-    #     try:
-    #         # Download the video
-    #         video_id:str = str(uuid.uuid4())
-    #         video_path:str = f"./http_server/videos/{video_id}.mp4"
-    #         self.logger.info(f'\nWill save reel to file "{video_path}"\n')
-    #         self._download_media(query, output_path=video_path)
-    #         self.logger.info(f'Successfully downloaded Instagram reel to file "{video_path}"\n\n')
-    #     except Exception as e:
-    #         self.logger.error(f"Error: {e}")
+        found: bool = False 
+        for prefix in MediaDownloaderBot.valid_url_prefixes:
+            if prefix in query:
+                found = True 
+                break 
+        
+        if not found:
+            return 
 
-    #     video_url:str=f"http://{PUBLIC_IPV4}:8080/videos/{video_id}.mp4"
-    #     self.logger.info(f'Returning video URL: "{video_url}"')
+        results = [
+            InlineQueryResultVideo(
+                id=str(uuid.uuid4()),
+                video_url=query.replace("instagram", "ddinstagram"),
+                mime_type='video/mp4',
+                thumbnail_url=query.replace("instagram", "ddinstagram"),
+                title="Instagram Reel as Video",
+                caption=f"The downloaded video: {query}",
+                description=f"The downloaded video: {query}",
+            )
+        ]
 
-    #     results = [
-    #         InlineQueryResultVideo(
-    #             '1',
-    #             video_url,
-    #             'video/mp4',
-    #             'https://raw.githubusercontent.com/eternnoir/pyTelegramBotAPI/master/examples/detailed_example/rooster.jpg',
-    #             'Title'
-    #         )
-    #     ]
-
-    #     await update.inline_query.answer(results)
+        await update.inline_query.answer(results)

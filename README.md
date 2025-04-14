@@ -13,7 +13,6 @@ A simple and lightweight **Telegram bot** that provides an interface to the [yt-
 
 - Python 3.8+
 - Telegram Bot Token from [@BotFather](https://t.me/BotFather)
-- `ffmpeg` (ensure it's installed and available in your system path)
 
 ## 📦 Installation
 

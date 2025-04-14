@@ -85,6 +85,11 @@ class MediaDownloaderBot(object):
 
     # Command handler for /auth
     async def auth_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Authenticate a chat so that the bot may be used in the chat.
+        
+        If the bot password was unspecified, then this is essentially a no-op. 
+        """
         assert update.message
 
         if self._password is None or self._password == "":
@@ -107,6 +112,10 @@ class MediaDownloaderBot(object):
             await update.message.reply_text("❌ Incorrect password.")
 
     async def download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Inspect messages to see if they are a link to an Instagram reel or YouTube short.
+        If so, download them, and reply to the message with the downloaded media. 
+        """
         if not update.message or not update.message.text:
             return
 
@@ -125,7 +134,7 @@ class MediaDownloaderBot(object):
         if update.effective_chat.type in ["group", "supergroup"]:
             self._user_to_group[update.effective_user.id] = update.effective_chat.id
 
-        if update.effective_chat.id not in self._authenticated_chats:
+        if self._password and update.effective_chat.id not in self._authenticated_chats:
             return
 
         for prefix in MediaDownloaderBot.valid_url_prefixes:
@@ -146,7 +155,8 @@ class MediaDownloaderBot(object):
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
-        Message handler. Inspect messages
+        Message handler. Inspect messages to see if they are a link to an Instagram reel or YouTube short.
+        If so, download them, and reply to the message with the downloaded media. 
         """
         if not update.message or not update.message.text:
             return
@@ -160,23 +170,26 @@ class MediaDownloaderBot(object):
         if update.effective_chat.type in ["group", "supergroup"]:
             self._user_to_group[update.effective_user.id] = update.effective_chat.id
 
-        if update.effective_chat.id not in self._authenticated_chats:
+        if self._password and update.effective_chat.id not in self._authenticated_chats:
             self.logger.info(
                 f'Unauthenticated chat: "{update.effective_chat.id}"')
             return
 
-        if 'instagram.com/reel/' in text or 'instagram.com/p/' in text:
-            try:
-                # Download the video
-                video_path = f"{str(uuid.uuid4())}.mp4"
-                self.logger.info(f'\nWill save reel to file "{video_path}"\n')
-                self.download_media(text, output_path=video_path)
-                self.logger.info("Successfully downloaded Instagram reel.\n\n")
-                await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
-                os.remove(video_path)
+        for prefix in MediaDownloaderBot.valid_url_prefixes:
+            if prefix in text:
+                try:
+                    # Download the video
+                    video_path = f"{str(uuid.uuid4())}.mp4"
+                    self.logger.info(f'\nWill save reel to file "{video_path}"\n')
+                    self.download_media(text, output_path=video_path)
+                    self.logger.info("Successfully downloaded Instagram reel.\n\n")
+                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
+                    os.remove(video_path)
 
-            except Exception as e:
-                self.logger.error(f"Error: {e}")
+                except Exception as e:
+                    self.logger.error(f"Error: {e}")
+                
+                return 
 
     # async def inline_download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     #     query = update.inline_query.query

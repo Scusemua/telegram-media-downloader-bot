@@ -17,13 +17,13 @@ class MediaDownloaderBot(object):
         'instagram.com/p/'
     ]
     
-    def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str|int]] = None, logger_format:str = LOGGER_FORMAT):
+    def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str]] = None, logger_format:str = LOGGER_FORMAT):
         self._authenticated_chats = set()
         self._user_to_group = {}
 
         self._token: str = token
         self._password: Optional[str] = password
-        self._preauth_chat_ids: List[str|int] = preauth_chat_ids or []
+        self._preauth_chat_ids: List[str] = preauth_chat_ids or []
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
@@ -127,7 +127,7 @@ class MediaDownloaderBot(object):
 
         text = splits[1]
 
-        self.logger.info(f'Received message: "{text}"')
+        self.logger.info(f'Received /download command: "{text}"')
 
         assert update.effective_chat
         assert update.effective_user
@@ -135,6 +135,8 @@ class MediaDownloaderBot(object):
             self._user_to_group[update.effective_user.id] = update.effective_chat.id
 
         if self._password and str(update.effective_chat.id) not in self._authenticated_chats:
+            self.logger.info(
+                f'Unauthenticated chat: "{update.effective_chat.id}"')
             return
 
         for prefix in MediaDownloaderBot.valid_url_prefixes:

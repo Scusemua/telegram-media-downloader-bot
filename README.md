@@ -74,6 +74,8 @@ python -m telegram_media_downloader_bot
 
 Then, open Telegram, find your bot, and send a YouTube Shorts or Instagram Reels link. The bot will reply with the downloadable video.
 
+![Sample image](./sample.png)
+
 # 📁 Project Structure
 
 ``` 

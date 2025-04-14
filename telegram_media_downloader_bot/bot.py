@@ -24,6 +24,8 @@ class MediaDownloaderBot(object):
         self._token: str = token
         self._password: Optional[str] = password
         self._preauth_chat_ids: List[str] = preauth_chat_ids or []
+        
+        self._num_downloads: int = 0
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
@@ -46,6 +48,7 @@ class MediaDownloaderBot(object):
         """
         app.add_handler(CommandHandler("auth", self.auth_command))
         app.add_handler(CommandHandler("download", self.download_command))
+        app.add_handler(CommandHandler("metrics", self.metrics_command))
 
         app.add_handler(MessageHandler(
             filters.TEXT & ~filters.COMMAND, self.handle_message))
@@ -165,11 +168,16 @@ class MediaDownloaderBot(object):
                     self.logger.info("Successfully downloaded Instagram reel.\n\n")
                     await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
                     os.remove(video_path)
+                    self._num_downloads += 1
 
                 except Exception as e:
                     self.logger.error(f"Error: {e}")
                 
                 return 
+    
+    async def metrics_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        assert update.message
+        await update.message.reply_text(f"⬇️ Total number of downloads: {self._num_downloads}")
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """

@@ -36,10 +36,25 @@ pip install -r requirements.txt
 
 4. Set up environment variables.
 
-Create a .env file in the root directory:
+Create a .env file in the root directory with the following required environment variable:
 ``` sh
-TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_BOT_TOKEN="<your_bot_token_here>"
 ```
+
+The `TELEGRAM_BOT_TOKEN` is used to specify the [Telegram Bot Token](https://core.telegram.org/bots/api#authorizing-your-bot) for the bot.
+
+Optionally, you may also specify a `CHAT_IDS` environment variable and a `BOT_PASSWORD` environment variable:
+``` sh
+TELEGRAM_BOT_TOKEN="<your_bot_token_here>"
+BOT_PASSWORD="<bot_password_here>"
+CHAT_IDS="000000001,000000002,000000003"
+```
+
+The `BOT_PASSWORD` is an optional password that, when specified, will prevent the bot from responding to links from chats that haven't been authenticated.
+
+To authenticate a chat, use the `/auth <bot_password>` command in the Telegram chat.
+
+The `CHAT_IDS` environment variable enables you to "pre-authenticate" some Telegram group chats/private message chats that will work immediately, without having to first use the bot's `/auth <bot_password>` command.
 
 # ▶️ Usage
 
@@ -54,8 +69,8 @@ Then, open Telegram, find your bot, and send a YouTube Shorts or Instagram Reels
 
 ``` 
 telegram-media-downloader/
+├── __main__.py            # Entrypoint
 ├── bot.py                 # Main Telegram bot logic
-├── downloader.py          # Wrapper around YoutubeDownloader module
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Bot configuration (not tracked)
 └── README.md              # This file

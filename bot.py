@@ -1,24 +1,18 @@
-from telegram import InlineQueryResultArticle, InputTextMessageContent, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import InlineQueryHandler
-from uuid import uuid4
-import json 
 import os
 import logging
-import requests
-from typing import List, Dict, Optional
-import uuid 
-from bs4 import BeautifulSoup
+from typing import List, Optional
+import uuid
 import yt_dlp
-from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, ContextTypes, filters, Application
-from telegram import InlineQueryResultVideo, Update
-from telegram.ext import InlineQueryHandler, Updater, CallbackContext, CallbackQueryHandler
+from telegram import Update
+from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application
+from telegram import Update
+
 
 class MediaDownloaderBot(object):
     def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str]] = None):
         self._authenticated_chats = set()
         self._user_to_group = {}
-        
+
         self._token: str = token
         self._password: Optional[str] = password
         self._preauth_chat_ids: List[str] = preauth_chat_ids or []
@@ -35,14 +29,17 @@ class MediaDownloaderBot(object):
         """
         app.add_handler(CommandHandler("auth", self.auth_command))
         app.add_handler(CommandHandler("download", self.download_command))
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message))
-        app.add_handler(InlineQueryHandler(self.inline_download_command))
+
+        app.add_handler(MessageHandler(
+            filters.TEXT & ~filters.COMMAND, self.handle_message))
+
+        # app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
 
     def download_media(self, url: str, output_path: str = "./") -> None:
         """
         Download the specified media to the specified path.
-        
+
         :param url: URL of the Instagram reel or YouTube short to download.
         :param output_path: File path of downloaded file.
         """
@@ -58,21 +55,24 @@ class MediaDownloaderBot(object):
     async def error_handler(self, update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Log the error and send a telegram message to notify the developer."""
         # Log the error before we do anything else, so we can see it even if something breaks.
-        self.logger.error("Exception while handling an update:", exc_info=context.error)
-    
-    def authenticate_chat(self, chat_id: str) -> None:
+        self.logger.error("Exception while handling an update:",
+                          exc_info=context.error)
+
+    def authenticate_chat(self, chat_id: str | int) -> None:
         """
         Authenticate the specified chat.
-        
+
         :param chat_id: the ID of the Telegram chat to be authenticated.
         """
-        self._authenticated_chats.add(chat_id)
+        self._authenticated_chats.add(str(chat_id))
 
     # Command handler for /auth
     async def auth_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        assert update.message
+
         if self._password is None or self._password == "":
             await update.message.reply_text("✅ Authentication is not required! You're good to go.")
-            return 
+            return
 
         args = context.args
 
@@ -80,34 +80,38 @@ class MediaDownloaderBot(object):
             await update.message.reply_text("❌ Please provide a password. Usage: /auth <password>")
             return
 
-        if args[0] == Bot.PASSWORD:
+        if args[0] == self._password:
+            assert update.effective_chat
             self.authenticate_chat(update.effective_chat.id)
-            self.logger.info(f'Authenticated chat: "{update.effective_chat.id}"')
+            self.logger.info(
+                f'Authenticated chat: "{update.effective_chat.id}"')
             await update.message.reply_text("✅ This chat has been authenticated!")
         else:
             await update.message.reply_text("❌ Incorrect password.")
-    
+
     async def download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if not update.message:
-            return 
-        
+        if not update.message or not update.message.text:
+            return
+
         text: str = update.message.text.strip()
         splits: list[str] = text.split(" ")
-        
+
         if len(splits) <= 1:
-            return 
-        
+            return
+
         text = splits[1]
-        
+
         self.logger.info(f'Received message: "{text}"')
 
+        assert update.effective_chat
+        assert update.effective_user
         if update.effective_chat.type in ["group", "supergroup"]:
             self._user_to_group[update.effective_user.id] = update.effective_chat.id
-        
-        if update.effective_chat.id not in self._authenticated_chats:
-            return 
 
-        if 'instagram.com/reel/' in text or 'instagram.com/p/' in text:            
+        if update.effective_chat.id not in self._authenticated_chats:
+            return
+
+        if 'instagram.com/reel/' in text or 'instagram.com/p/' in text:
             try:
                 # Download the video
                 video_path = f"{str(uuid.uuid4())}.mp4"
@@ -121,21 +125,24 @@ class MediaDownloaderBot(object):
                 self.logger.error(f"Error: {e}")
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if not update.message:
-            return 
-        
+        if not update.message or not update.message.text:
+            return
+
         text = update.message.text.strip()
-        
+
         self.logger.info(f'Received message: "{text}"')
 
+        assert update.effective_chat
+        assert update.effective_user
         if update.effective_chat.type in ["group", "supergroup"]:
             self._user_to_group[update.effective_user.id] = update.effective_chat.id
-        
-        if update.effective_chat.id not in self._authenticated_chats:
-            self.logger.info(f'Unauthenticated chat: "{update.effective_chat.id}"')
-            return 
 
-        if 'instagram.com/reel/' in text or 'instagram.com/p/' in text:            
+        if update.effective_chat.id not in self._authenticated_chats:
+            self.logger.info(
+                f'Unauthenticated chat: "{update.effective_chat.id}"')
+            return
+
+        if 'instagram.com/reel/' in text or 'instagram.com/p/' in text:
             try:
                 # Download the video
                 video_path = f"{str(uuid.uuid4())}.mp4"
@@ -159,7 +166,7 @@ class MediaDownloaderBot(object):
     #     self.logger.info(f'Received inline download query: "{query}"')
 
     #     if 'instagram.com/reel/' not in query and 'instagram.com/p/' not in query:
-    #         return 
+    #         return
 
     #     try:
     #         # Download the video
@@ -178,7 +185,7 @@ class MediaDownloaderBot(object):
     #         InlineQueryResultVideo(
     #             '1',
     #             video_url,
-    #             'video/mp4', 
+    #             'video/mp4',
     #             'https://raw.githubusercontent.com/eternnoir/pyTelegramBotAPI/master/examples/detailed_example/rooster.jpg',
     #             'Title'
     #         )

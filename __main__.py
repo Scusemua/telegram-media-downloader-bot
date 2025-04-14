@@ -1,18 +1,20 @@
 import os
 import logging
-from typing import List 
+from typing import List
 
 from dotenv import load_dotenv
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, Application
 
-from bot import MediaDownloaderBot 
+from bot import MediaDownloaderBot
 
 # Enable logging
 logging.basicConfig(
-    level=logging.INFO,  # Set the minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Customize log format
+    # Set the minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    level=logging.INFO,
+    # Customize log format
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',  # Customize datetime format
     handlers=[logging.StreamHandler()]  # Explicitly send to console
 )

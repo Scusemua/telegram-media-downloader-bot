@@ -74,7 +74,7 @@ class MediaDownloaderBot(object):
         # Log the error before we do anything else, so we can see it even if something breaks.
         self.logger.error("Exception while handling an update:",
                           exc_info=context.error)
-
+    
     def authenticate_chat(self, chat_id: str | int) -> None:
         """
         Authenticate the specified chat.
@@ -101,15 +101,31 @@ class MediaDownloaderBot(object):
         if not args:
             await update.message.reply_text("❌ Please provide a password. Usage: /auth <password>")
             return
+        
+        assert update.effective_chat
+        if len(args) == 2:
+            chat_id: str = args[0]
+            password: str = args[1] 
+        elif len(args) == 1:
+            password: str = args[0]
+            chat_id: str = str(update.effective_chat.id)
+        else:
+            await update.message.reply_text("❌ Invalid command. Usage: `/auth <password>` or `/auth <chat_id> <password>`.")
+            return 
+        
+        if password != self._password:
+            await update.message.reply_text("❌ Incorrect password.")
+            return 
+        
 
-        if args[0] == self._password:
-            assert update.effective_chat
-            self.authenticate_chat(update.effective_chat.id)
-            self.logger.info(
-                f'Authenticated chat: "{update.effective_chat.id}"')
+        self.authenticate_chat(chat_id)
+        self.logger.info(
+            f'Authenticated chat: "{chat_id}"')
+        
+        if chat_id == str(update.effective_chat.id):
             await update.message.reply_text("✅ This chat has been authenticated!")
         else:
-            await update.message.reply_text("❌ Incorrect password.")
+            await update.message.reply_text("✅ Successfully authenticated the specified chat!")
 
     async def download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """

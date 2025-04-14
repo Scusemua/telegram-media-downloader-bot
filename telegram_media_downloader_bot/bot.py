@@ -64,12 +64,30 @@ class MediaDownloaderBot(object):
         app.add_handler(CommandHandler("download", self.download_command))
         app.add_handler(CommandHandler("metrics", self.metrics_command))
         app.add_handler(CommandHandler("exit", self.exit_handler))
+        app.add_handler(CommandHandler("clear_auth", self.clear_auth_handler))
 
         app.add_handler(MessageHandler(
             filters.TEXT & ~filters.COMMAND, self.handle_message))
 
         # app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
+        
+    async def clear_auth_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        Handler for the /clear_auth command.
+        
+        Clears all authorized chats. Re-adds the pre-specified chats.
+        
+        Only works if sent by the admin user.
+        """
+        if not update.effective_user or str(update.effective_user.id) != self._admin_user_id:
+            return 
+        
+        self._authenticated_chats.clear()
+
+        for preauth_chat_id in self._preauth_chat_ids:
+            self.logger.debug(f'Pre-autenticating chat "{preauth_chat_id}"')
+            self.authenticate_chat(preauth_chat_id)
     
     async def exit_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """

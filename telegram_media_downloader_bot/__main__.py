@@ -17,6 +17,7 @@ parser.add_argument("-t", "--token", type = str, default = "", help = "Telegram 
 parser.add_argument("-p", "--password", type = str, default = "", help = "Telegram bot password. If specified, only chats authenticated with this password (via the /auth <password> command) will be able to use the bot. You may also specify this via the `BOT_PASSWORD` environment variable.")
 parser.add_argument("-c", "--chat-ids", type = str, nargs = "*", default=[], help = "List of Telegram chat IDs to authenticate immediately (i.e., without needing to use the /auth <password> command from the chat). You may also specify this via the `PREAUTHENTICATED_CHAT_IDS` environment variable as a comma-separated list.")
 parser.add_argument("-a", "--admin-user-id", type = str, default = "", help = "Telegram user ID of the admin. To get your own Telegram user ID, send a message to @userinfobot.")
+parser.add_argument("-b", "--bot-user-id", type = str, default = "", help = "Telegram user ID of the bot. Accessible by viewing the bot's page within Telegram.")
 
 args = parser.parse_args()
 
@@ -27,6 +28,9 @@ if token == "":
 admin_user_id: str = os.environ.get("ADMIN_USER_ID", args.admin_user_id)
 bot_password: str = os.environ.get("BOT_PASSWORD", args.password)
 preauthenticated_chat_ids: str | List[str] = os.environ.get("CHAT_IDS", args.chat_ids)
+bot_user_id: str = os.environ.get("BOT_USER_ID", args.bot_user_id)
+if bot_user_id == "":
+    raise ValueError("No Telegram bot user ID specified")
 
 app: Application = ApplicationBuilder().token(token).build()
 
@@ -40,6 +44,7 @@ bot: MediaDownloaderBot = MediaDownloaderBot(
     password=bot_password,
     preauth_chat_ids=preauthenticated_chat_ids,
     admin_user_id=admin_user_id,
+    bot_user_id=bot_user_id,
 )
 
 bot.init_handlers(app)

@@ -1,14 +1,19 @@
+import ffmpeg
 import asyncio
+import subprocess
+import threading
 import os
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import uuid
 import yt_dlp
-from telegram import InlineQueryResultVideo, Update
+from telegram import InlineQueryResultArticle, InlineQueryResultDocument, InlineQueryResultPhoto, InlineQueryResultVideo, InputMessageContent, InputTextMessageContent, Update
 from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application, InlineQueryHandler
 from telegram import Update
+from flask import Flask, make_response, send_from_directory, abort, request
 import threading
+import pprint
 
 LOGGER_FORMAT: str = '%(asctime)s | %(levelname)s | %(message)s | %(name)s | %(funcName)s'
 
@@ -72,6 +77,29 @@ class MediaDownloaderBot(object):
         for preauth_chat_id in self._preauth_chat_ids:
             self.logger.debug(f'Pre-autenticating chat "{preauth_chat_id}"')
             self.authenticate_chat(preauth_chat_id)
+
+        self._flask_app = Flask(__name__)
+
+        thread = threading.Thread(target=self.start_server, daemon=True)
+        thread.start()
+
+    def log_request(self):
+        self.logger.debug("Request Headers %s", request.headers)
+        return None
+
+    def start_server(self):
+        self._flask_app.add_url_rule(
+            '/video/<filename>', 'serve_video', self.serve_video)
+        self._flask_app.add_url_rule(
+            '/thumbnail/<filename>', 'serve_thumbnail', self.serve_thumbnail)
+        self._flask_app.add_url_rule(
+            '/product/<name>', 'get_product', self.get_product)
+        self._flask_app.before_request(self.log_request)
+
+        self.logger.info(
+            "Flask HTTP server is running on port {self._http_port}.")
+
+        self._flask_app.run(host='0.0.0.0', port=self._http_port)
 
     def init_handlers(self, app: Application) -> None:
         """
@@ -362,16 +390,75 @@ class MediaDownloaderBot(object):
         if not found:
             return 
 
+        try:
+            # Download the video
+            video_id: str = str(uuid.uuid4())
+            video_path: str = os.path.join("./video", f"{video_id}.mp4")
+            self.logger.info(f'\nWill save reel to file "{video_path}"\n')
+            self._download_media(query, output_path=video_path)
+            self.logger.info(
+                f'Successfully downloaded Instagram reel to file "{video_path}"\n\n')
+        except Exception as e:
+            self.logger.error(f"Error: {e}")
+
+        thumbnail_output_path: str = os.path.join(
+            "./thumbnail", f"{video_id}.jpg")
+        subprocess.call(['ffmpeg', '-i', video_path, '-ss',
+                        '00:00:00.000', '-vframes', '1', thumbnail_output_path])
+
+        video_streams = ffmpeg.probe(video_path, select_streams="v")[
+            'streams'][0]
+
+        video_url: str = f"http://{self._public_ipv4}:{self._http_port}/video/{video_id}.mp4"
+        self.logger.info(f'Returning video URL: "{video_url}"')
+
+        thumbnail_url: str = f"http://{self._public_ipv4}:{self._http_port}/thumbnail/{video_id}.jpg"
+        self.logger.info(f'Returning thumbnail URL: "{thumbnail_url}"')
+
         results = [
             InlineQueryResultVideo(
                 id=str(uuid.uuid4()),
                 video_url=query.replace("instagram", "ddinstagram"),
                 mime_type='video/mp4',
-                thumbnail_url=query.replace("instagram", "ddinstagram"),
+                thumbnail_url=thumbnail_url,
                 title="Instagram Reel as Video",
+                video_width=int(video_streams['coded_width']),
+                video_height=int(video_streams['coded_height']),
+                video_duration=int(float(video_streams['duration'])),
                 caption=f"The downloaded video: {query}",
                 description=f"The downloaded video: {query}",
             )
         ]
 
         await update.inline_query.answer(results)
+
+    def get_product(self, name):
+        return "The product is " + str(name)
+
+    def serve_thumbnail(self, filename: str):
+        self.logger.info(f'Serving thumbnail: "{filename}"')
+        file_stats = os.stat(os.path.join(os.getcwd(), "thumbnail", filename))
+        response = make_response(send_from_directory(os.path.join(
+            os.getcwd(), "thumbnail"), filename, as_attachment=False, mimetype='image/jpeg'))
+        response.headers['Content-Type'] = 'image/jpeg'
+        response.headers['Content-Length'] = file_stats.st_size
+
+        # if 'Content-Disposition' in response.headers:
+        #     del response.headers['Content-Disposition']
+
+        response.headers['Access-Control-Allow-Origin'] = '*'  # if needed
+        return response
+
+    def serve_video(self, filename: str):
+        self.logger.info(f'Serving video: "{filename}"')
+        file_stats = os.stat(os.path.join(os.getcwd(), "video", filename))
+        response = make_response(send_from_directory(os.path.join(
+            os.getcwd(), "video"), filename, as_attachment=True, mimetype='video/mp4'))
+        response.headers['Content-Type'] = 'video/mp4'
+        response.headers['Content-Length'] = file_stats.st_size
+        response.headers['Access-Control-Allow-Origin'] = '*'  # if needed
+
+        # if 'Content-Disposition' in response.headers:
+        #     del response.headers['Content-Disposition']
+
+        return response

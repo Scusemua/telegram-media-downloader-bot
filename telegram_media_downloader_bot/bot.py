@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import uuid
 import yt_dlp
-from telegram import InlineQueryResultArticle, InlineQueryResultDocument, InlineQueryResultPhoto, InlineQueryResultVideo, InputMessageContent, InputTextMessageContent, Update
+from telegram import InlineQueryResultArticle, InlineQueryResultCachedVideo, InlineQueryResultDocument, InlineQueryResultPhoto, InlineQueryResultVideo, InlineQueryResultsButton, InputMessageContent, InputTextMessageContent, Update
 from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application, InlineQueryHandler
 from telegram import Update
 from flask import Flask, make_response, send_from_directory, abort, request
@@ -47,7 +47,8 @@ class MediaDownloaderBot(object):
         logger_format: str = LOGGER_FORMAT
     ):
         self._authenticated_chats = set()
-        self._user_to_group = {}
+        self._user_to_group: Dict[str, str] = {}
+        self._user_to_chat_id: Dict[str, str] = {}
 
         self._http_port: int = http_port
         self._bot_user_id: str = bot_user_id
@@ -109,6 +110,7 @@ class MediaDownloaderBot(object):
         app.add_handler(CommandHandler("download", self.download_command))
         app.add_handler(CommandHandler("metrics", self.metrics_command))
         app.add_handler(CommandHandler("exit", self.exit_command))
+        app.add_handler(CommandHandler("start", self.start_command))
         app.add_handler(CommandHandler("clear_auth", self.clear_auth_command))
 
         app.add_handler(MessageHandler(
@@ -118,6 +120,20 @@ class MediaDownloaderBot(object):
 
         app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
+
+    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        assert update.effective_chat
+        assert update.effective_user
+
+        chat_id = str(update.effective_chat.id)
+        user_id = str(update.effective_user.id)
+
+        self._user_to_chat_id[user_id] = chat_id
+        
+        self.logger.debug(f'Registerd chat ID "{chat_id}" for user "{user_id}".')
+
+        if update.message:
+            await update.message.reply_text("🚀 Thanks! You can now use inline queries.")
 
     async def clear_auth_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
@@ -263,7 +279,8 @@ class MediaDownloaderBot(object):
         assert update.effective_chat
         assert update.effective_user
         if update.effective_chat.type in ["group", "supergroup"]:
-            self._user_to_group[update.effective_user.id] = update.effective_chat.id
+            self._user_to_group[str(update.effective_user.id)] = str(
+                update.effective_chat.id)
 
         if self._password and str(update.effective_chat.id) not in self._authenticated_chats:
             self.logger.info(
@@ -373,6 +390,27 @@ class MediaDownloaderBot(object):
         assert update.inline_query is not None
         query = update.inline_query.query
 
+        self.logger.debug(f"update: {update}")
+
+        self.logger.debug(f"context: {context}")
+
+        user_id = str(update.inline_query.from_user.id)
+        if user_id not in self._user_to_chat_id:
+            self.logger.debug(f"_user_to_chat_id: {self._user_to_chat_id}")
+            # User hasn't started a private chat with the bot
+            await update.inline_query.answer(
+                [],
+                button=InlineQueryResultsButton(
+                    "Start the bot first", start_parameter="arg"),
+                cache_time=1,
+                is_personal=True,
+            )
+            return
+        private_chat_id: str = self._user_to_chat_id[user_id]
+
+        if "?" in query:
+            query = query[0:query.index("?")+1]
+
         self.logger.info(f'Received inline download query: "{query}"')
         self.logger.info(update)
 
@@ -381,14 +419,14 @@ class MediaDownloaderBot(object):
 
         self.logger.info(f'Received inline download query: "{query}"')
 
-        found: bool = False 
+        found: bool = False
         for prefix in MediaDownloaderBot.valid_url_prefixes:
             if prefix in query:
-                found = True 
-                break 
-        
+                found = True
+                break
+
         if not found:
-            return 
+            return
 
         try:
             # Download the video
@@ -400,37 +438,35 @@ class MediaDownloaderBot(object):
                 f'Successfully downloaded Instagram reel to file "{video_path}"\n\n')
         except Exception as e:
             self.logger.error(f"Error: {e}")
+        
+        message = await context.bot.send_video(chat_id=private_chat_id, video=open(video_path, "rb"))
+        
+        assert message.video
+        
+        # Use get_file() to retrieve the File object
+        file = await message.video.get_file()
 
-        thumbnail_output_path: str = os.path.join(
-            "./thumbnail", f"{video_id}.jpg")
-        subprocess.call(['ffmpeg', '-i', video_path, '-ss',
-                        '00:00:00.000', '-vframes', '1', thumbnail_output_path])
-
-        video_streams = ffmpeg.probe(video_path, select_streams="v")[
-            'streams'][0]
-
-        video_url: str = f"http://{self._public_ipv4}:{self._http_port}/video/{video_id}.mp4"
-        self.logger.info(f'Returning video URL: "{video_url}"')
-
-        thumbnail_url: str = f"http://{self._public_ipv4}:{self._http_port}/thumbnail/{video_id}.jpg"
-        self.logger.info(f'Returning thumbnail URL: "{thumbnail_url}"')
+        # You now have access to file.file_id
+        file_id = file.file_id
 
         results = [
-            InlineQueryResultVideo(
-                id=str(uuid.uuid4()),
-                video_url=query.replace("instagram", "ddinstagram"),
-                mime_type='video/mp4',
-                thumbnail_url=thumbnail_url,
-                title="Instagram Reel as Video",
-                video_width=int(video_streams['coded_width']),
-                video_height=int(video_streams['coded_height']),
-                video_duration=int(float(video_streams['duration'])),
-                caption=f"The downloaded video: {query}",
-                description=f"The downloaded video: {query}",
-            )
+            InlineQueryResultCachedVideo(
+                id="inline-video-1",
+                video_file_id=file_id,
+                title="Pre-uploaded video",
+            ),
         ]
 
         await update.inline_query.answer(results)
+        
+        async def clean_up():
+            await asyncio.sleep(2)
+            self.logger.debug("Cleaning up.")
+            os.remove(video_path)
+            await context.bot.delete_message(chat_id=private_chat_id, message_id=message.message_id)
+        
+        # Delete it after 2 seconds
+        asyncio.create_task(clean_up())
 
     def get_product(self, name):
         return "The product is " + str(name)

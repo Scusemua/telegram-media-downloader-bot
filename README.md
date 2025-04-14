@@ -78,11 +78,16 @@ Then, open Telegram, find your bot, and send a YouTube Shorts or Instagram Reels
 
 ``` 
 telegram-media-downloader/
-├── __main__.py            # Entrypoint
-├── bot.py                 # Main Telegram bot logic
-├── requirements.txt       # Python dependencies
-├── .env                   # Bot configuration (not tracked)
-└── README.md              # This file
+├── telegram_media_downloader_bot/  # Main Python module.
+   ├── __init__.py                  # Module declaration.
+   ├── __main__.py                  # Entrypoint.
+   ├── bot.py                       # Main Telegram bot logic.
+├── requirements.txt       # Python dependencies.
+├── pyproject.toml         # Module configuration file.
+├── .gitignore             # .gitignore file.
+├── .env                   # Bot configuration (not tracked).
+├── sample-env             # Sample bot configuration file.
+└── README.md              # This file.
 ```
 
 # ✅ Supported URLs

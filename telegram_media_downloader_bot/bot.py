@@ -9,6 +9,12 @@ from telegram import Update
 
 LOGGER_FORMAT:str = '%(asctime)s | %(levelname)s | %(message)s | %(name)s | %(funcName)s'
 
+"""
+auth - /auth <password> or /auth <chat_id> <password>: authenticate the chat so that it can be used with the bot.
+download - /download <url>: download the specified media.
+metrics - /metrics: return the total number of downloads.
+"""
+
 class MediaDownloaderBot(object):
     valid_url_prefixes: List[str] = [
         "youtube.com/shorts/",
@@ -148,6 +154,33 @@ class MediaDownloaderBot(object):
 
         self.logger.info(f'Received /download command: "{text}"')
 
+        await self._handle_download_request(text, update)
+        
+    async def metrics_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        assert update.message
+        await update.message.reply_text(f"⬇️ Total number of downloads: {self._num_downloads}")
+
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Message handler. Inspect messages to see if they are a link to an Instagram reel or YouTube short.
+        If so, download them, and reply to the message with the downloaded media. 
+        """
+        if not update.message or not update.message.text:
+            return
+
+        text = update.message.text.strip()
+
+        self.logger.info(f'Received message: "{text}"')
+
+        await self._handle_download_request(text, update)
+    
+    async def _handle_download_request(self, text:str, update: Update):
+        """
+        Generic handler for messages and download commands.
+        """
+        if not update.message or not update.message.text:
+            return
+        
         assert update.effective_chat
         assert update.effective_user
         if update.effective_chat.type in ["group", "supergroup"]:
@@ -169,48 +202,6 @@ class MediaDownloaderBot(object):
                     await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
                     os.remove(video_path)
                     self._num_downloads += 1
-
-                except Exception as e:
-                    self.logger.error(f"Error: {e}")
-                
-                return 
-    
-    async def metrics_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        assert update.message
-        await update.message.reply_text(f"⬇️ Total number of downloads: {self._num_downloads}")
-
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """
-        Message handler. Inspect messages to see if they are a link to an Instagram reel or YouTube short.
-        If so, download them, and reply to the message with the downloaded media. 
-        """
-        if not update.message or not update.message.text:
-            return
-
-        text = update.message.text.strip()
-
-        self.logger.info(f'Received message: "{text}"')
-
-        assert update.effective_chat
-        assert update.effective_user
-        if update.effective_chat.type in ["group", "supergroup"]:
-            self._user_to_group[update.effective_user.id] = update.effective_chat.id
-
-        if self._password and str(update.effective_chat.id) not in self._authenticated_chats:
-            self.logger.info(
-                f'Unauthenticated chat: "{update.effective_chat.id}"')
-            return
-
-        for prefix in MediaDownloaderBot.valid_url_prefixes:
-            if prefix in text:
-                try:
-                    # Download the video
-                    video_path = f"{str(uuid.uuid4())}.mp4"
-                    self.logger.info(f'\nWill save reel to file "{video_path}"\n')
-                    self.download_media(text, output_path=video_path)
-                    self.logger.info("Successfully downloaded Instagram reel.\n\n")
-                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
-                    os.remove(video_path)
 
                 except Exception as e:
                     self.logger.error(f"Error: {e}")

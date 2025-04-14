@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, Application
 
-from bot import MediaDownloaderBot
+from telegram_media_downloader_bot.bot import MediaDownloaderBot
 
 # Enable logging
 logging.basicConfig(

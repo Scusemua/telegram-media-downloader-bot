@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["telegram_media_downloader"]
+packages = ["telegram_media_downloader_bot"]
 
 [build-system]
 requires = ["setuptools>=61.0"]

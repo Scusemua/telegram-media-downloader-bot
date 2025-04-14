@@ -64,7 +64,7 @@ The `CHAT_IDS` environment variable enables you to "pre-authenticate" some Teleg
 
 Start the bot with:
 ``` sh
-python bot.py
+python -m telegram_media_downloader_bot
 ```
 
 Then, open Telegram, find your bot, and send a YouTube Shorts or Instagram Reels link. The bot will reply with the downloadable video.

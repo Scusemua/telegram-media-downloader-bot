@@ -23,10 +23,18 @@ class MediaDownloaderBot(object):
         'instagram.com/p/'
     ]
     
-    def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str]] = None, logger_format:str = LOGGER_FORMAT):
+    def __init__(
+        self, 
+        token: str = "",
+        password: Optional[str] = "", 
+        preauth_chat_ids: Optional[List[str]] = None, 
+        admin_user_id: str = "",
+        logger_format:str = LOGGER_FORMAT
+    ):
         self._authenticated_chats = set()
         self._user_to_group = {}
 
+        self._admin_user_id: str = admin_user_id
         self._token: str = token
         self._password: Optional[str] = password
         self._preauth_chat_ids: List[str] = preauth_chat_ids or []
@@ -55,12 +63,28 @@ class MediaDownloaderBot(object):
         app.add_handler(CommandHandler("auth", self.auth_command))
         app.add_handler(CommandHandler("download", self.download_command))
         app.add_handler(CommandHandler("metrics", self.metrics_command))
+        app.add_handler(CommandHandler("exit", self.exit_handler))
 
         app.add_handler(MessageHandler(
             filters.TEXT & ~filters.COMMAND, self.handle_message))
 
         # app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
+    
+    async def exit_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        Exit command handler.
+        
+        /exit
+        
+        Only works if sent by the admin user.
+        """
+        if not update.effective_user or str(update.effective_user.id) != self._admin_user_id:
+            return 
+        
+        self.logger.info("Received 'exit' command from admin. Goodbye!")
+        
+        exit(0)
 
     def download_media(self, url: str, output_path: str = "./") -> None:
         """

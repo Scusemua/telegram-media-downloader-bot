@@ -83,6 +83,8 @@ class MediaDownloaderBot(object):
         if not update.effective_user or str(update.effective_user.id) != self._admin_user_id:
             return 
         
+        self.logger.info("/clear_auth: clearing all authenticated chat IDs.")
+        
         self._authenticated_chats.clear()
 
         for preauth_chat_id in self._preauth_chat_ids:

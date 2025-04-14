@@ -10,6 +10,13 @@ from telegram import Update
 LOGGER_FORMAT:str = '%(asctime)s | %(levelname)s | %(message)s | %(name)s | %(funcName)s'
 
 class MediaDownloaderBot(object):
+    valid_url_prefixes: List[str] = [
+        "youtube.com/shorts/",
+        "youtu.be/shorts/",
+        'instagram.com/reel/',
+        'instagram.com/p/'
+    ]
+    
     def __init__(self, token: str = "", password: Optional[str] = "", preauth_chat_ids: Optional[List[str]] = None, logger_format:str = LOGGER_FORMAT):
         self._authenticated_chats = set()
         self._user_to_group = {}
@@ -121,20 +128,26 @@ class MediaDownloaderBot(object):
         if update.effective_chat.id not in self._authenticated_chats:
             return
 
-        if 'instagram.com/reel/' in text or 'instagram.com/p/' in text:
-            try:
-                # Download the video
-                video_path = f"{str(uuid.uuid4())}.mp4"
-                self.logger.info(f'\nWill save reel to file "{video_path}"\n')
-                self.download_media(text, output_path=video_path)
-                self.logger.info("Successfully downloaded Instagram reel.\n\n")
-                await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
-                os.remove(video_path)
+        for prefix in MediaDownloaderBot.valid_url_prefixes:
+            if prefix in text:
+                try:
+                    # Download the video
+                    video_path = f"{str(uuid.uuid4())}.mp4"
+                    self.logger.info(f'\nWill save reel to file "{video_path}"\n')
+                    self.download_media(text, output_path=video_path)
+                    self.logger.info("Successfully downloaded Instagram reel.\n\n")
+                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
+                    os.remove(video_path)
 
-            except Exception as e:
-                self.logger.error(f"Error: {e}")
+                except Exception as e:
+                    self.logger.error(f"Error: {e}")
+                
+                return 
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """
+        Message handler. Inspect messages
+        """
         if not update.message or not update.message.text:
             return
 

@@ -1,4 +1,4 @@
-# 📥 Telegram Media Downloader Bot
+# 📥 Telegram yt-dlp Interface Bot
 
 A simple and lightweight **Telegram bot** that provides an interface to the [yt-dlp](https://github.com/yt-dlp/yt-dlp) Python module, enabling users to download **YouTube Shorts** and **Instagram Reels** directly within Telegram.
 

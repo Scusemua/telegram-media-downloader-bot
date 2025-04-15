@@ -19,6 +19,12 @@ dependencies = [
     "yt-dlp>=2024.1.1",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio"
+]
+
 [tool.setuptools]
 packages = ["telegram_media_downloader_bot"]
 

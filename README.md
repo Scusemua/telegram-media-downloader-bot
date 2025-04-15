@@ -1,6 +1,20 @@
 # 📥 Telegram yt-dlp Interface Bot
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE "License")
+[![Supported Sites](https://img.shields.io/badge/-Supported_Sites-brightgreen.svg?style=for-the-badge)]([supportedsites.md](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-supported-urls) "Supported Sites")
+
 A simple and lightweight **Telegram bot** that provides an interface to the [yt-dlp](https://github.com/yt-dlp/yt-dlp) Python module, enabling users to download **YouTube Shorts** and **Instagram Reels** directly within Telegram.
+
+- [Features](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-features)
+- [Requirements](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-requirements)
+- [Installation](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-installation)
+- [Usage](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-installation)
+  - [User Commands](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#user-commands)
+  - [Admin-Only Commands](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#admin-commands)
+- [Project Structure](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-project-structure)
+- [Supported URLs](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-supported-urls)
+- [Disclaimer](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-project-structure)
+- [License](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-license)
 
 ## 🚀 Features
 

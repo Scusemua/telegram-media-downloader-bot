@@ -345,31 +345,31 @@ class MediaDownloaderBot(object):
             self.logger.error(f'Failed to download video at URL "{query}"')
             self.logger.error(ex)
             self.logger.error(traceback.format_exc())
-            
+
             results = []
-            
+
             if "Restricted Video" in str(ex):
                 results.append(InlineQueryResultArticle(
-                    id = str(uuid.uuid4()),
-                    title = 'Error: Age Restricted Video',
-                    description = 'Failed to download specified video due to age restriction.',
-                    input_message_content = InputTextMessageContent(
-                        message_text = 'Error: failed to download specified video due to age restriction.',
+                    id=str(uuid.uuid4()),
+                    title='Error: Age Restricted Video',
+                    description='Failed to download specified video due to age restriction.',
+                    input_message_content=InputTextMessageContent(
+                        message_text='Error: failed to download specified video due to age restriction.',
                     )
                 ))
             else:
                 results.append(InlineQueryResultArticle(
-                    id = str(uuid.uuid4()),
-                    title = 'Error: Failed to Download Video',
-                    description = 'The requested video could not be downloaded. Sorry!',
-                    input_message_content = InputTextMessageContent(
-                        message_text = 'Error: the requested video could not be downloaded. Sorry!',
+                    id=str(uuid.uuid4()),
+                    title='Error: Failed to Download Video',
+                    description='The requested video could not be downloaded. Sorry!',
+                    input_message_content=InputTextMessageContent(
+                        message_text='Error: the requested video could not be downloaded. Sorry!',
                     )
                 ))
-            
+
             await update.inline_query.answer(results)
-            
-            return 
+
+            return
 
         message = await context.bot.send_video(chat_id=private_chat_id, video=open(video_path, "rb"))
 
@@ -438,7 +438,8 @@ class MediaDownloaderBot(object):
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             download_retcode = ydl.download([url])
-            self.logger.debug(f'Download return code for URL "{url}": {download_retcode}')
+            self.logger.debug(
+                f'Download return code for URL "{url}": {download_retcode}')
 
         self._num_downloads += 1
 
@@ -473,15 +474,18 @@ class MediaDownloaderBot(object):
                     self.logger.info(
                         f'Successfully downloaded Instagram reel "{text}" to file "{video_path}".\n\n')
                 except Exception as ex:
-                    self.logger.error(f'Failed to download video at URL "{text}"')
+                    self.logger.error(
+                        f'Failed to download video at URL "{text}"')
                     self.logger.error(ex)
                     self.logger.error(traceback.format_exc())
-                    
+
                     if "Restricted Video" in str(ex):
-                        await update.message.reply_video(f"⚠️ Failed to download the requested video. Video is age restricted, and downloading age restricted videos is not supported at this time. Sorry!")
+                        await update.message.reply_text(f"⚠️ Failed to download the requested video. Video is age restricted, and downloading age restricted videos is not supported at this time. Sorry!", 
+                                                        reply_to_message_id=update.message.message_id)
                     else:
-                        await update.message.reply_video(f"⚠️ Failed to download the requested video. Sorry!")
-                    
+                        await update.message.reply_text(f"⚠️ Failed to download the requested video. Sorry!", 
+                                                        reply_to_message_id=update.message.message_id)
+
                     return None
 
                 try:

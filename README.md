@@ -126,7 +126,13 @@ telegram-media-downloader/
 - https://www.youtu.be/shorts/<reel_id>
 
 # 🔒 Disclaimer
-This project is for educational purposes only. Downloading content from YouTube or Instagram may violate their terms of service. Use responsibly.
+This project is intended strictly for educational purposes and serves as a demonstration of how to interact with APIs, handle media downloads programmatically, and build Telegram bots.
+
+Downloading videos, audio, or other content from platforms like YouTube or Instagram may violate their Terms of Service (ToS). This bot is not affiliated with or endorsed by these platforms.
+
+Do not download, distribute, or modify copyrighted material without explicit permission from the rightful owner. Unauthorized use may result in legal consequences. Always seek legal alternatives (e.g., YouTube Premium, official download options) to support content creators.
+
+See YouTube’s [Terms of Service](https://www.youtube.com/static?template=terms) and (Copyright Center)[https://www.youtube.com/howyoutubeworks/policies/copyright/] for clarity. Likewise, see Instagram's [Terms of Use](https://help.instagram.com/581066165581870) and [Copyright Center](https://help.instagram.com/126382350847838).
 
 # 📄 License
 MIT License

@@ -98,7 +98,7 @@ class MediaDownloaderBot(object):
         app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
 
-    # Handler for /start 
+    # Handler for /start
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         assert update.effective_chat
         assert update.effective_user
@@ -107,13 +107,14 @@ class MediaDownloaderBot(object):
         user_id = str(update.effective_user.id)
 
         self._user_to_chat_id[user_id] = chat_id
-        
-        self.logger.debug(f'Registerd chat ID "{chat_id}" for user "{user_id}".')
+
+        self.logger.debug(
+            f'Registerd chat ID "{chat_id}" for user "{user_id}".')
 
         if update.message:
             await update.message.reply_text("🚀 Thanks! You can now use inline queries.")
 
-    # Handler for /clear_auth 
+    # Handler for /clear_auth
     async def clear_auth_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Handler for the /clear_auth command.
@@ -212,25 +213,25 @@ class MediaDownloaderBot(object):
         await update.message.reply_text(f"✅ Authentication successful! Thanks {update.effective_user.first_name}.")
 
     # Command handler for /download
-    async def download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[str]:
         """
         Inspect messages to see if they are a link to an Instagram reel or YouTube short.
         If so, download them, and reply to the message with the downloaded media. 
         """
         if not update.message or not update.message.text:
-            return
+            return None
 
         text: str = update.message.text.strip()
         splits: list[str] = text.split(" ")
 
         if len(splits) <= 1:
-            return
+            return None
 
         text = splits[1]
 
         self.logger.info(f'Received /download command: "{text}"')
 
-        await self._handle_download_request(text, update)
+        return await self._handle_download_request(text, update)
 
     # Command handler for /metrics
     async def metrics_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -238,7 +239,7 @@ class MediaDownloaderBot(object):
         await update.message.reply_text(f"⬇️ Total number of downloads: {self._num_downloads}")
 
     # General message handler.
-    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> Optional[str]:
         """
         Message handler. Inspect messages to see if they are a link to an Instagram reel or YouTube short.
         If so, download them, and reply to the message with the downloaded media. 
@@ -250,7 +251,7 @@ class MediaDownloaderBot(object):
 
         self.logger.info(f'Received message: "{text}"')
 
-        await self._handle_download_request(text, update)
+        return await self._handle_download_request(text, update)
 
     # Handler for being added to a new chat.
     async def handle_new_chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -346,11 +347,11 @@ class MediaDownloaderBot(object):
                 f'Successfully downloaded Instagram reel to file "{video_path}"\n\n')
         except Exception as e:
             self.logger.error(f"Error: {e}")
-        
+
         message = await context.bot.send_video(chat_id=private_chat_id, video=open(video_path, "rb"))
-        
+
         assert message.video
-        
+
         # Use get_file() to retrieve the File object
         file = await message.video.get_file()
 
@@ -366,13 +367,13 @@ class MediaDownloaderBot(object):
         ]
 
         await update.inline_query.answer(results)
-        
+
         async def clean_up():
             await asyncio.sleep(2)
             self.logger.debug("Cleaning up.")
             os.remove(video_path)
             await context.bot.delete_message(chat_id=private_chat_id, message_id=message.message_id)
-        
+
         # Delete it after 2 seconds
         asyncio.create_task(clean_up())
 
@@ -415,7 +416,9 @@ class MediaDownloaderBot(object):
 
         self._num_downloads += 1
 
-    async def _handle_download_request(self, text: str, update: Update, delete_after_reply: bool = True):
+        self.logger.debug(f'Created file: "{output_path}"')
+
+    async def _handle_download_request(self, text: str, update: Update, delete_after_reply: bool = True) -> Optional[str]:
         """
         Generic handler for messages and download commands.
         """
@@ -437,18 +440,27 @@ class MediaDownloaderBot(object):
             if prefix in text:
                 try:
                     # Download the video
-                    video_path = f"./video/{str(uuid.uuid4())}.mp4"
+                    video_path = f"./{str(uuid.uuid4())}.mp4"
                     self.logger.info(
                         f'\nWill save reel to file "{video_path}"\n')
                     self._download_media(text, output_path=video_path)
                     self.logger.info(
-                        "Successfully downloaded Instagram reel.\n\n")
-                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
-
-                    if delete_after_reply:
-                        os.remove(video_path)
-
+                        f'Successfully downloaded Instagram reel "{text}" to file "{video_path}".\n\n')
                 except Exception as e:
                     self.logger.error(f"Error: {e}")
+                    return None
 
-                return
+                try:
+                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
+                except Exception as e:
+                    self.logger.error(f"Error: {e}")
+                    return None
+
+                try:
+                    if delete_after_reply:
+                        os.remove(video_path)
+                except Exception as e:
+                    self.logger.error(f"Error: {e}")
+                    return video_path
+
+                return video_path

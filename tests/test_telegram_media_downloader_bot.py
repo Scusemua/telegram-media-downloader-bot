@@ -1,3 +1,4 @@
+from datetime import datetime
 from fileinput import FileInput
 import os
 from typing import Optional 
@@ -134,3 +135,53 @@ async def test_download_media(bot, fake_context):
     os.remove(output_path)
     
     assert not os.path.exists(output_path)
+    
+@pytest.mark.asyncio
+@patch("telegram_media_downloader_bot.bot.os.remove")
+@patch("telegram_media_downloader_bot.bot.open", new_callable=MagicMock)
+@patch("telegram_media_downloader_bot.bot.uuid.uuid4", return_value="fake-id")
+@patch("telegram_media_downloader_bot.bot.MediaDownloaderBot._download_media")
+async def test_inline_download_command_success(mock_download, mock_uuid, mock_open, mock_remove, bot, fake_context):
+    # Set up user ID and chat ID mapping
+    bot._user_to_chat_id["1"] = "100"
+
+    mock_video = MagicMock()
+    mock_video.get_file = AsyncMock(return_value=MagicMock(file_id="cached-file-id"))
+    mock_message = MagicMock()
+    mock_message.video = mock_video
+    fake_context.bot.send_video = AsyncMock(return_value=mock_message)
+    fake_context.bot.delete_message = AsyncMock()
+
+    update = MagicMock()
+    update.inline_query.query = "https://instagram.com/reel/abc123"
+    update.inline_query.from_user.id = 1
+    update.inline_query.answer = AsyncMock()
+
+    await bot.inline_download_command(update, fake_context)
+
+    mock_download.assert_called_once()
+    fake_context.bot.send_video.assert_called_once()
+    update.inline_query.answer.assert_called_once()
+
+@pytest.mark.asyncio
+@patch("telegram_media_downloader_bot.bot.datetime")
+@patch("telegram_media_downloader_bot.bot.asyncio.sleep", return_value=None)
+async def test_check_group_auth_timeout(mock_sleep, mock_datetime, bot, fake_context):
+    # Set up group that has not authenticated
+    chat_id = "9999"
+    bot._group_auth_timers[chat_id] = {
+        "removal_time": datetime.now(),
+        "authenticated": False
+    }
+
+    # Mock Telegram bot methods
+    fake_context.bot.send_message = AsyncMock()
+    fake_context.bot.leave_chat = AsyncMock()
+
+    await bot._check_group_auth(chat_id=int(chat_id), context=fake_context)
+
+    fake_context.bot.send_message.assert_called_once_with(
+        chat_id=int(chat_id), text="⏰ Authentication timeout. Goodbye!"
+    )
+    fake_context.bot.leave_chat.assert_called_once_with(int(chat_id))
+    assert chat_id not in bot._group_auth_timers

@@ -117,10 +117,10 @@ telegram-media-downloader/
 ```
 
 # ✅ Supported URLs
-- https://www.youtube.com/shorts/`<video_id>`
-- https://www.instagram.com/reel/`<reel_id>`
-- https://www.instagram.com/p/`<reel_id>`
-- https://www.youtu.be/shorts/`<reel_id>`
+- `https://www.youtube.com/shorts/<video_id>`
+- `https://www.instagram.com/reel/<reel_id>`
+- `https://www.instagram.com/p/<reel_id>`
+- `https://www.youtu.be/shorts/<reel_id>`
 
 # 🔒 Disclaimer
 This project is intended strictly for educational purposes and serves as a demonstration of how to interact with APIs, handle media downloads programmatically, and build Telegram bots.

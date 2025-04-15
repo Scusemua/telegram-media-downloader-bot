@@ -7,7 +7,7 @@
 [![Unit Tests](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/run_tests.yml/badge.svg?branch=)](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/run_tests.yml)
 [![Upload Python Package](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/python-publish.yml/badge.svg?branch=)](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/python-publish.yml)
 
-A simple and lightweight **Telegram bot** that provides an interface to the [yt-dlp](https://github.com/yt-dlp/yt-dlp) Python module, enabling users to download **YouTube Shorts** and **Instagram Reels** directly within Telegram.
+A simple and lightweight **Telegram bot** that provides an interface to the [yt-dlp](https://github.com/yt-dlp/yt-dlp) Python module, enabling users to download video media directly within Telegram.
 
 - [Features](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-features)
 - [Requirements](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-requirements)

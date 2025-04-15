@@ -17,58 +17,57 @@ A simple and lightweight **Telegram bot** that provides an interface to the [yt-
 ## 📦 Installation
 
 1. **Clone the repository**
-   ```bash
+   ```shell
    git clone https://github.com/yourusername/telegram-media-downloader.git
    cd telegram-media-downloader
 
 2. **Create a virtual environment (optional but recommended)**
-```sh
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+   ```shell
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
 3. **Install dependencies**
-``` sh
-pip install .
-```
+   ```shell
+   pip install .
+   ```
 
-or simply 
-``` sh
-pip install -r requirements.txt
-```
+   or simply 
+   ```shell
+   pip install -r requirements.txt
+   ```
 
 4. **Configuration (environmente variables)**
-Create a .env file in the root directory with the following required environment variable:
-``` sh
-TELEGRAM_BOT_TOKEN="<your_bot_token_here>"
-```
+   Create a .env file in the root directory with the following required environment variable:
+   ``` sh
+   TELEGRAM_BOT_TOKEN="<your_bot_token_here>"
+   ```
 
-The `TELEGRAM_BOT_TOKEN` is used to specify the [Telegram Bot Token](https://core.telegram.org/bots/api#authorizing-your-bot) for the bot.
+   The `TELEGRAM_BOT_TOKEN` is used to specify the [Telegram Bot Token](https://core.telegram.org/bots/api#authorizing-your-bot) for the bot.
 
-Optionally, you may also specify a `CHAT_IDS` environment variable and a `BOT_PASSWORD` environment variable:
-``` sh
-TELEGRAM_BOT_TOKEN="<your_bot_token_here>"
-BOT_PASSWORD="<bot_password_here>"
-CHAT_IDS="000000001,000000002,000000003"
-BOT_USER_ID="0123456789"
-```
+   Optionally, you may also specify a `CHAT_IDS` environment variable and a `BOT_PASSWORD` environment variable:
+   ``` sh
+   TELEGRAM_BOT_TOKEN="<your_bot_token_here>"
+   BOT_PASSWORD="<bot_password_here>"
+   CHAT_IDS="000000001,000000002,000000003"
+   BOT_USER_ID="0123456789"
+   ```
 
-The `BOT_PASSWORD` is an optional password that, when specified, will prevent the bot from responding to links from chats that haven't been authenticated.
+   The `BOT_PASSWORD` is an optional password that, when specified, will prevent the bot from responding to links from chats that haven't been authenticated.
 
-To authenticate a chat, use the `/auth <bot_password>` command in the Telegram chat.
+   To authenticate a chat, use the `/auth <bot_password>` command in the Telegram chat.
 
-The `CHAT_IDS` environment variable enables you to "pre-authenticate" some Telegram group chats/private message chats that will work immediately, without having to first use the bot's `/auth <bot_password>` command.
+   The `CHAT_IDS` environment variable enables you to "pre-authenticate" some Telegram group chats/private message chats that will work immediately, without having to first use the bot's `/auth <bot_password>` command.
 
-The `BOT_USER_ID` environment variable is used to inform the bot of its own Telegram user ID. This is used so that the bot can detect when it has been added to a new Telegram group chat. This initiates a countdown timer. If the chat is not authenticated using the `/auth` command before the timer expires, then the bot will leave the group chat. This is performed so that the bot is not overwhelmed by messages from unauthenticated group chats.
+   The `BOT_USER_ID` environment variable is used to inform the bot of its own Telegram user ID. This is used so that the bot can detect when it has been added to a new Telegram group chat. This initiates a countdown timer. If the chat is not authenticated using the `/auth` command before the timer expires, then the bot will leave the group chat. This is performed so that the bot is not overwhelmed by messages from unauthenticated group chats.
 
-**Note:** these arguments can also be passed as command line arguments. For a description of the available command line arguments, execute the following:
-``` shell
-python -m telegram_media_downloader_bot --help 
-```
+   **Note:** these arguments can also be passed as command line arguments. For a description of the available command line arguments, execute the following:
+   ``` shell
+   python -m telegram_media_downloader_bot --help 
+   ```
 
-## Additional Configuration
-
-You may set the `ADMIN_USER_ID` to your Telegram user ID to enable access to various admin-only commands.
+5. **Optional Configuration**
+   You may set the `ADMIN_USER_ID` to your Telegram user ID to enable access to various admin-only commands.
 
 # ▶️ Usage
 

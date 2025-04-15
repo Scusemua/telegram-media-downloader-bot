@@ -21,14 +21,13 @@ A simple and lightweight **Telegram bot** that provides an interface to the [yt-
    git clone https://github.com/yourusername/telegram-media-downloader.git
    cd telegram-media-downloader
 
-2. Create a virtual environment (optional but recommended)
-
+2. **Create a virtual environment (optional but recommended)**
 ```sh
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies
+3. **Install dependencies**
 ``` sh
 pip install .
 ```
@@ -38,8 +37,7 @@ or simply
 pip install -r requirements.txt
 ```
 
-4. Configuration (environmente variables)
-
+4. **Configuration (environmente variables)**
 Create a .env file in the root directory with the following required environment variable:
 ``` sh
 TELEGRAM_BOT_TOKEN="<your_bot_token_here>"

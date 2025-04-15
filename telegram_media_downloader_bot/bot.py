@@ -1,19 +1,14 @@
-import ffmpeg
 import asyncio
-import subprocess
-import threading
 import os
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import uuid
 import yt_dlp
-from telegram import InlineQueryResultArticle, InlineQueryResultCachedVideo, InlineQueryResultDocument, InlineQueryResultPhoto, InlineQueryResultVideo, InlineQueryResultsButton, InputMessageContent, InputTextMessageContent, Update
+from telegram import InlineQueryResultCachedVideo, InlineQueryResultsButton, Update
 from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application, InlineQueryHandler
 from telegram import Update
-from flask import Flask, make_response, send_from_directory, abort, request
 import threading
-import pprint
 
 LOGGER_FORMAT: str = '%(asctime)s | %(levelname)s | %(message)s | %(name)s | %(funcName)s'
 

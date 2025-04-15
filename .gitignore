@@ -9,6 +9,9 @@ privatekey.key
 # C extensions
 *.so
 
+video
+thumbnail
+
 # Distribution / packaging
 .Python
 build/

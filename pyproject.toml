@@ -1,6 +1,6 @@
 [project]
 name = "telegram-media-downloader"
-version = "0.2"
+version = "0.2.1"
 description = "A Telegram bot that downloads YouTube Shorts and Instagram Reels using yt_dlp."
 authors = [
     { name = "Ben Carver", email = "benrcarver@gmail.com" }

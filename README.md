@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/badge/-PyPI-blue.svg?logo=pypi&labelColor=555555)](https://pypi.org/project/telegram-media-downloader/0.1.0/ "PyPI")
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE "License")
 [![Supported Sites](https://img.shields.io/badge/-Supported_Sites-brightgreen.svg)](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-supported-urls "Supported Sites")
-[![Upload Python Package](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/python-publish.yml/badge.svg?branch=main)](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/python-publish.yml)
+[![Upload Python Package](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/python-publish.yml/badge.svg?branch=)](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/python-publish.yml)
 
 A simple and lightweight **Telegram bot** that provides an interface to the [yt-dlp](https://github.com/yt-dlp/yt-dlp) Python module, enabling users to download **YouTube Shorts** and **Instagram Reels** directly within Telegram.
 

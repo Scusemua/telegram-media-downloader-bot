@@ -132,7 +132,7 @@ Downloading videos, audio, or other content from platforms like YouTube or Insta
 
 Do not download, distribute, or modify copyrighted material without explicit permission from the rightful owner. Unauthorized use may result in legal consequences. Always seek legal alternatives (e.g., YouTube Premium, official download options) to support content creators.
 
-See YouTube’s [Terms of Service](https://www.youtube.com/static?template=terms) and (Copyright Center)[https://www.youtube.com/howyoutubeworks/policies/copyright/] for clarity. Likewise, see Instagram's [Terms of Use](https://help.instagram.com/581066165581870) and [Copyright Center](https://help.instagram.com/126382350847838).
+See YouTube's [Terms of Service](https://www.youtube.com/static?template=terms) and (Copyright Center)[https://www.youtube.com/howyoutubeworks/policies/copyright/] for clarity. Likewise, see Instagram's [Terms of Use](https://help.instagram.com/581066165581870) and [Copyright Center](https://help.instagram.com/126382350847838).
 
 # 📄 License
 MIT License

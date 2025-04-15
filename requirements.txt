@@ -2,3 +2,5 @@ python-telegram-bot
 requests
 beautifulsoup4
 yt_dlp
+pytest
+pytest-asyncio

@@ -1,7 +1,7 @@
 # 📥 Telegram yt-dlp Interface Bot
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE "License")
-[![Supported Sites](https://img.shields.io/badge/-Supported_Sites-brightgreen.svg?style=for-the-badge)]((https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-supported-urls) "Supported Sites")
+[![Supported Sites](https://img.shields.io/badge/-Supported_Sites-brightgreen.svg?style=for-the-badge)](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-supported-urls "Supported Sites")
 
 A simple and lightweight **Telegram bot** that provides an interface to the [yt-dlp](https://github.com/yt-dlp/yt-dlp) Python module, enabling users to download **YouTube Shorts** and **Instagram Reels** directly within Telegram.
 

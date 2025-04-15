@@ -27,12 +27,14 @@ A simple and lightweight **Telegram bot** that provides an interface to the [yt-
 - 🧠 Built using Python and [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 - 🤖 Clean Telegram Bot interface for ease of use
 
-## 🛠 Requirements
+![Architecture](./arch.svg)
+
+## 📦 Installation
+
+### 🛠 Requirements
 
 - Python 3.8+
 - Telegram Bot Token from [@BotFather](https://t.me/BotFather)
-
-## 📦 Installation
 
 1. **Clone the repository**
    ```shell

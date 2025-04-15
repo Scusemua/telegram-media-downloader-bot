@@ -123,6 +123,7 @@ telegram-media-downloader/
 - https://www.youtube.com/shorts/<video_id>
 - https://www.instagram.com/reel/<reel_id>
 - https://www.instagram.com/p/<reel_id>
+- https://www.youtu.be/shorts/<reel_id>
 
 # 🔒 Disclaimer
 This project is for educational purposes only. Downloading content from YouTube or Instagram may violate their terms of service. Use responsibly.

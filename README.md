@@ -1,5 +1,7 @@
 # 📥 Telegram yt-dlp Interface Bot
 
+![GitHub Release](https://img.shields.io/github/v/release/Scusemua/telegram-media-downloader-bot)
+[![PyPI](https://img.shields.io/badge/-PyPI-blue.svg?logo=pypi&labelColor=555555)](https://pypi.org/project/telegram-media-downloader/0.1.0/ "PyPI")
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE "License")
 [![Supported Sites](https://img.shields.io/badge/-Supported_Sites-brightgreen.svg)](https://github.com/Scusemua/telegram-media-downloader-bot?tab=readme-ov-file#-supported-urls "Supported Sites")
 [![Pylint](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/pylint.yml/badge.svg)](https://github.com/Scusemua/telegram-media-downloader-bot/actions/workflows/pylint.yml)

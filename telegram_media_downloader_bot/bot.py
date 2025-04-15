@@ -79,29 +79,6 @@ class MediaDownloaderBot(object):
             self.logger.debug(f'Pre-autenticating chat "{preauth_chat_id}"')
             self.authenticate_chat(preauth_chat_id)
 
-        self._flask_app = Flask(__name__)
-
-        thread = threading.Thread(target=self.start_server, daemon=True)
-        thread.start()
-
-    def log_request(self):
-        self.logger.debug("Request Headers %s", request.headers)
-        return None
-
-    def start_server(self):
-        self._flask_app.add_url_rule(
-            '/video/<filename>', 'serve_video', self.serve_video)
-        self._flask_app.add_url_rule(
-            '/thumbnail/<filename>', 'serve_thumbnail', self.serve_thumbnail)
-        self._flask_app.add_url_rule(
-            '/product/<name>', 'get_product', self.get_product)
-        self._flask_app.before_request(self.log_request)
-
-        self.logger.info(
-            "Flask HTTP server is running on port {self._http_port}.")
-
-        self._flask_app.run(host='0.0.0.0', port=self._http_port)
-
     def init_handlers(self, app: Application) -> None:
         """
         Initialize command handlers for Telegram app.
@@ -121,6 +98,7 @@ class MediaDownloaderBot(object):
         app.add_handler(InlineQueryHandler(self.inline_download_command))
         app.add_error_handler(self.error_handler)
 
+    # Handler for /start 
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         assert update.effective_chat
         assert update.effective_user
@@ -135,6 +113,7 @@ class MediaDownloaderBot(object):
         if update.message:
             await update.message.reply_text("🚀 Thanks! You can now use inline queries.")
 
+    # Handler for /clear_auth 
     async def clear_auth_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Handler for the /clear_auth command.
@@ -154,6 +133,7 @@ class MediaDownloaderBot(object):
             self.logger.debug(f'Pre-autenticating chat "{preauth_chat_id}"')
             self.authenticate_chat(preauth_chat_id)
 
+    # Handler for /exit
     async def exit_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
         Exit command handler.
@@ -231,6 +211,7 @@ class MediaDownloaderBot(object):
 
         await update.message.reply_text(f"✅ Authentication successful! Thanks {update.effective_user.first_name}.")
 
+    # Command handler for /download
     async def download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Inspect messages to see if they are a link to an Instagram reel or YouTube short.
@@ -251,10 +232,12 @@ class MediaDownloaderBot(object):
 
         await self._handle_download_request(text, update)
 
+    # Command handler for /metrics
     async def metrics_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         assert update.message
         await update.message.reply_text(f"⬇️ Total number of downloads: {self._num_downloads}")
 
+    # General message handler.
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """
         Message handler. Inspect messages to see if they are a link to an Instagram reel or YouTube short.
@@ -269,44 +252,7 @@ class MediaDownloaderBot(object):
 
         await self._handle_download_request(text, update)
 
-    async def _handle_download_request(self, text: str, update: Update, delete_after_reply: bool = True):
-        """
-        Generic handler for messages and download commands.
-        """
-        if not update.message or not update.message.text:
-            return
-
-        assert update.effective_chat
-        assert update.effective_user
-        if update.effective_chat.type in ["group", "supergroup"]:
-            self._user_to_group[str(update.effective_user.id)] = str(
-                update.effective_chat.id)
-
-        if self._password and str(update.effective_chat.id) not in self._authenticated_chats:
-            self.logger.info(
-                f'Unauthenticated chat: "{update.effective_chat.id}"')
-            return
-
-        for prefix in MediaDownloaderBot.valid_url_prefixes:
-            if prefix in text:
-                try:
-                    # Download the video
-                    video_path = f"./video/{str(uuid.uuid4())}.mp4"
-                    self.logger.info(
-                        f'\nWill save reel to file "{video_path}"\n')
-                    self._download_media(text, output_path=video_path)
-                    self.logger.info(
-                        "Successfully downloaded Instagram reel.\n\n")
-                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
-
-                    if delete_after_reply:
-                        os.remove(video_path)
-
-                except Exception as e:
-                    self.logger.error(f"Error: {e}")
-
-                return
-
+    # Handler for being added to a new chat.
     async def handle_new_chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle when the bot is added to a new group."""
         chat = update.effective_chat
@@ -347,45 +293,7 @@ class MediaDownloaderBot(object):
         # Schedule a check for this group
         asyncio.create_task(self._check_group_auth(chat_id, context))
 
-    async def _check_group_auth(self, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
-        """Check if a group has been authenticated after the timeout period."""
-        await asyncio.sleep(self._auth_timeout)
-
-        # Check if group is still in the timer dict and not authenticated
-        if str(chat_id) in self._group_auth_timers and not self._group_auth_timers[str(chat_id)]["authenticated"]:
-            self.logger.info(
-                f"Group {chat_id} failed to authenticate in time. Leaving...")
-            try:
-                await context.bot.send_message(
-                    chat_id=chat_id,
-                    text="⏰ Authentication timeout. Goodbye!"
-                )
-                await context.bot.leave_chat(chat_id)
-            except Exception as e:
-                self.logger.error(f"Error leaving group {chat_id}: {e}")
-            finally:
-                # Clean up
-                if str(chat_id) in self._group_auth_timers:
-                    del self._group_auth_timers[str(chat_id)]
-
-    def _download_media(self, url: str, output_path: str = "./") -> None:
-        """
-        Download the specified media to the specified path.
-
-        :param url: URL of the Instagram reel or YouTube short to download.
-        :param output_path: File path of downloaded file.
-        """
-        ydl_opts = {
-            'outtmpl': f'{output_path}',
-            'format': 'mp4',
-            'quiet': False,
-        }
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-        self._num_downloads += 1
-
+    # Inline command handler.
     async def inline_download_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         assert update.inline_query is not None
         query = update.inline_query.query
@@ -468,33 +376,79 @@ class MediaDownloaderBot(object):
         # Delete it after 2 seconds
         asyncio.create_task(clean_up())
 
-    def get_product(self, name):
-        return "The product is " + str(name)
+    async def _check_group_auth(self, chat_id: int, context: ContextTypes.DEFAULT_TYPE):
+        """Check if a group has been authenticated after the timeout period."""
+        await asyncio.sleep(self._auth_timeout)
 
-    def serve_thumbnail(self, filename: str):
-        self.logger.info(f'Serving thumbnail: "{filename}"')
-        file_stats = os.stat(os.path.join(os.getcwd(), "thumbnail", filename))
-        response = make_response(send_from_directory(os.path.join(
-            os.getcwd(), "thumbnail"), filename, as_attachment=False, mimetype='image/jpeg'))
-        response.headers['Content-Type'] = 'image/jpeg'
-        response.headers['Content-Length'] = file_stats.st_size
+        # Check if group is still in the timer dict and not authenticated
+        if str(chat_id) in self._group_auth_timers and not self._group_auth_timers[str(chat_id)]["authenticated"]:
+            self.logger.info(
+                f"Group {chat_id} failed to authenticate in time. Leaving...")
+            try:
+                await context.bot.send_message(
+                    chat_id=chat_id,
+                    text="⏰ Authentication timeout. Goodbye!"
+                )
+                await context.bot.leave_chat(chat_id)
+            except Exception as e:
+                self.logger.error(f"Error leaving group {chat_id}: {e}")
+            finally:
+                # Clean up
+                if str(chat_id) in self._group_auth_timers:
+                    del self._group_auth_timers[str(chat_id)]
 
-        # if 'Content-Disposition' in response.headers:
-        #     del response.headers['Content-Disposition']
+    def _download_media(self, url: str, output_path: str = "./") -> None:
+        """
+        Download the specified media to the specified path.
 
-        response.headers['Access-Control-Allow-Origin'] = '*'  # if needed
-        return response
+        :param url: URL of the Instagram reel or YouTube short to download.
+        :param output_path: File path of downloaded file.
+        """
+        ydl_opts = {
+            'outtmpl': f'{output_path}',
+            'format': 'mp4',
+            'quiet': False,
+        }
 
-    def serve_video(self, filename: str):
-        self.logger.info(f'Serving video: "{filename}"')
-        file_stats = os.stat(os.path.join(os.getcwd(), "video", filename))
-        response = make_response(send_from_directory(os.path.join(
-            os.getcwd(), "video"), filename, as_attachment=True, mimetype='video/mp4'))
-        response.headers['Content-Type'] = 'video/mp4'
-        response.headers['Content-Length'] = file_stats.st_size
-        response.headers['Access-Control-Allow-Origin'] = '*'  # if needed
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
-        # if 'Content-Disposition' in response.headers:
-        #     del response.headers['Content-Disposition']
+        self._num_downloads += 1
 
-        return response
+    async def _handle_download_request(self, text: str, update: Update, delete_after_reply: bool = True):
+        """
+        Generic handler for messages and download commands.
+        """
+        if not update.message or not update.message.text:
+            return
+
+        assert update.effective_chat
+        assert update.effective_user
+        if update.effective_chat.type in ["group", "supergroup"]:
+            self._user_to_group[str(update.effective_user.id)] = str(
+                update.effective_chat.id)
+
+        if self._password and str(update.effective_chat.id) not in self._authenticated_chats:
+            self.logger.info(
+                f'Unauthenticated chat: "{update.effective_chat.id}"')
+            return
+
+        for prefix in MediaDownloaderBot.valid_url_prefixes:
+            if prefix in text:
+                try:
+                    # Download the video
+                    video_path = f"./video/{str(uuid.uuid4())}.mp4"
+                    self.logger.info(
+                        f'\nWill save reel to file "{video_path}"\n')
+                    self._download_media(text, output_path=video_path)
+                    self.logger.info(
+                        "Successfully downloaded Instagram reel.\n\n")
+                    await update.message.reply_video(video=open(video_path, 'rb'), reply_to_message_id=update.message.message_id)
+
+                    if delete_after_reply:
+                        os.remove(video_path)
+
+                except Exception as e:
+                    self.logger.error(f"Error: {e}")
+
+                return

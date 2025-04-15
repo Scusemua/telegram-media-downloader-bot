@@ -2,10 +2,11 @@ import asyncio
 import os
 import logging
 from datetime import datetime, timedelta
+import traceback
 from typing import List, Optional, Dict, Any
 import uuid
 import yt_dlp
-from telegram import InlineQueryResultCachedVideo, InlineQueryResultsButton, Update
+from telegram import InlineQueryResultArticle, InlineQueryResultCachedVideo, InlineQueryResultsButton, InputTextMessageContent, Update
 from telegram.ext import MessageHandler, CommandHandler, ContextTypes, filters, Application, InlineQueryHandler
 from telegram import Update
 import threading
@@ -336,12 +337,39 @@ class MediaDownloaderBot(object):
             # Download the video
             video_id: str = str(uuid.uuid4())
             video_path: str = os.path.join("./video", f"{video_id}.mp4")
-            self.logger.info(f'\nWill save reel to file "{video_path}"\n')
+            self.logger.info(f'Will save reel to file "{video_path}"\n')
             self._download_media(query, output_path=video_path)
             self.logger.info(
                 f'Successfully downloaded Instagram reel to file "{video_path}"\n\n')
-        except Exception as e:
-            self.logger.error(f"Error: {e}")
+        except Exception as ex:
+            self.logger.error(f'Failed to download video at URL "{query}"')
+            self.logger.error(ex)
+            self.logger.error(traceback.format_exc())
+            
+            results = []
+            
+            if "Restricted Video" in str(ex):
+                results.append(InlineQueryResultArticle(
+                    id = str(uuid.uuid4()),
+                    title = 'Error: Age Restricted Video',
+                    description = 'Failed to download specified video due to age restriction.',
+                    input_message_content = InputTextMessageContent(
+                        message_text = 'Error: failed to download specified video due to age restriction.',
+                    )
+                ))
+            else:
+                results.append(InlineQueryResultArticle(
+                    id = str(uuid.uuid4()),
+                    title = 'Error: Failed to Download Video',
+                    description = 'The requested video could not be downloaded. Sorry!',
+                    input_message_content = InputTextMessageContent(
+                        message_text = 'Error: the requested video could not be downloaded. Sorry!',
+                    )
+                ))
+            
+            await update.inline_query.answer(results)
+            
+            return 
 
         message = await context.bot.send_video(chat_id=private_chat_id, video=open(video_path, "rb"))
 
@@ -404,10 +432,13 @@ class MediaDownloaderBot(object):
             'outtmpl': f'{output_path}',
             'format': 'mp4',
             'quiet': False,
+            'age_limit': 21,
+            'ignoreerrors': False,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            download_retcode = ydl.download([url])
+            self.logger.debug(f'Download return code for URL "{url}": {download_retcode}')
 
         self._num_downloads += 1
 
@@ -437,12 +468,20 @@ class MediaDownloaderBot(object):
                     # Download the video
                     video_path = f"./{str(uuid.uuid4())}.mp4"
                     self.logger.info(
-                        f'\nWill save reel to file "{video_path}"\n')
+                        f'Will save reel to file "{video_path}"\n')
                     self._download_media(text, output_path=video_path)
                     self.logger.info(
                         f'Successfully downloaded Instagram reel "{text}" to file "{video_path}".\n\n')
-                except Exception as e:
-                    self.logger.error(f"Error: {e}")
+                except Exception as ex:
+                    self.logger.error(f'Failed to download video at URL "{text}"')
+                    self.logger.error(ex)
+                    self.logger.error(traceback.format_exc())
+                    
+                    if "Restricted Video" in str(ex):
+                        await update.message.reply_video(f"⚠️ Failed to download the requested video. Video is age restricted, and downloading age restricted videos is not supported at this time. Sorry!")
+                    else:
+                        await update.message.reply_video(f"⚠️ Failed to download the requested video. Sorry!")
+                    
                     return None
 
                 try:

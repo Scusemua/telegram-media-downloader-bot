@@ -113,6 +113,8 @@ You may also perform *inline downloads*. You must first execute the `/start` com
 
 This enables you to convert, download, and send reels and shorts without having to send the link at all.
 
+[![Inline Download Video Example](https://github-production-user-asset-6210df.s3.amazonaws.com/4888750/434539335-4aad5ba2-26ba-4515-a7b7-87832987b81a.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250416%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250416T214155Z&X-Amz-Expires=300&X-Amz-Signature=34eae410550a116453e2815cf87f17e533ba7fcd253c43152a124cba49596eba&X-Amz-SignedHeaders=host)](https://github-production-user-asset-6210df.s3.amazonaws.com/4888750/434539335-4aad5ba2-26ba-4515-a7b7-87832987b81a.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAVCODYLSA53PQK4ZA%2F20250416%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20250416T214155Z&X-Amz-Expires=300&X-Amz-Signature=34eae410550a116453e2815cf87f17e533ba7fcd253c43152a124cba49596eba&X-Amz-SignedHeaders=host)
+
 ## Admin Commands
 
 The following commands are only available to the admin user (i.e., the user whose Telegram ID is specified via the `ADMIN_USER_ID` environment variable).

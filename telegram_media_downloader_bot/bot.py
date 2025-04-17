@@ -393,7 +393,7 @@ class MediaDownloaderBot(object):
         # You now have access to file.file_id
         file_id = file.file_id
         
-        if len(split_query) > 0:
+        if len(split_query) > 1:
             caption:str = split_query[1]
         else:
             caption:str = ""

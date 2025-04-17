@@ -319,9 +319,6 @@ class MediaDownloaderBot(object):
             return
         private_chat_id: str = self._user_to_chat_id[user_id]
 
-        if "?" in query:
-            query = query[0:query.index("?")]
-
         self.logger.info(f'Received inline download query: "{query}"')
         self.logger.info(update)
 
@@ -332,6 +329,9 @@ class MediaDownloaderBot(object):
         
         split_query: List[str] = query.split(" ")
         url: str = split_query[0]
+        
+        if "?" in url:
+            url = url[0:url.index("?")]
 
         found: bool = False
         for prefix in MediaDownloaderBot.valid_url_prefixes:
@@ -394,7 +394,7 @@ class MediaDownloaderBot(object):
         file_id = file.file_id
         
         if len(split_query) > 1:
-            caption:str = split_query[1]
+            caption:str = " ".join(split_query[1:])
         else:
             caption:str = ""
 

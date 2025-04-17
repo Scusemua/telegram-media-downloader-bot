@@ -39,6 +39,7 @@ class MediaDownloaderBot(object):
         bot_user_id: str = "",
         public_ipv4: str = "",
         http_port: int = 8081,
+        log_file: str = "telegram_bot.log",
         auth_timeout: int = DEFAULT_AUTH_TIMEOUT,
         logger_format: str = LOGGER_FORMAT
     ):
@@ -64,12 +65,17 @@ class MediaDownloaderBot(object):
         self.logger.setLevel(logging.DEBUG)
 
         # Create a handler and set the formatter
-        handler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler()
         formatter = logging.Formatter(logger_format)
-        handler.setFormatter(formatter)
+        stream_handler.setFormatter(formatter)
 
         # Add the handler to the logger
-        self.logger.addHandler(handler)
+        self.logger.addHandler(stream_handler)
+        
+        if log_file:
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
 
         for preauth_chat_id in self._preauth_chat_ids:
             self.logger.debug(f'Pre-autenticating chat "{preauth_chat_id}"')

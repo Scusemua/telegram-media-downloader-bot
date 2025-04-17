@@ -19,6 +19,7 @@ parser.add_argument("-p", "--password", type = str, default = "", help = "Telegr
 parser.add_argument("-c", "--chat-ids", type = str, nargs = "*", default=[], help = "List of Telegram chat IDs to authenticate immediately (i.e., without needing to use the /auth <password> command from the chat). You may also specify this via the `PREAUTHENTICATED_CHAT_IDS` environment variable as a comma-separated list.")
 parser.add_argument("-a", "--admin-user-id", type = str, default = "", help = "Telegram user ID of the admin. To get your own Telegram user ID, send a message to @userinfobot.")
 parser.add_argument("-b", "--bot-user-id", type = str, default = "", help = "Telegram user ID of the bot. Accessible by viewing the bot's page within Telegram.")
+parser.add_argument("-l", "--log-file", type = str, default = "telegram_bot.log", help = "Path for log file. If the empty string is specified, then logs will only be written to stdout.")
 parser.add_argument("-i", "--ip", type = str, help = "Public IPv4.")
 
 args = parser.parse_args()
@@ -32,6 +33,8 @@ bot_password: str = os.environ.get("BOT_PASSWORD", args.password)
 preauthenticated_chat_ids: str | List[str] = os.environ.get("CHAT_IDS", args.chat_ids)
 bot_user_id: str = os.environ.get("BOT_USER_ID", args.bot_user_id)
 public_ipv4:str = os.environ.get("PUBLIC_IPV4", args.ip)
+
+log_file: str = args.log_file
 
 if not bot_user_id:
     raise ValueError("No Telegram bot user ID specified")
@@ -53,6 +56,7 @@ bot: MediaDownloaderBot = MediaDownloaderBot(
     admin_user_id=admin_user_id,
     bot_user_id=bot_user_id,
     public_ipv4=public_ipv4,
+    log_file=log_file,
 )
 
 bot.init_handlers(app)

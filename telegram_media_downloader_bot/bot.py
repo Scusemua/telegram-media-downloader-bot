@@ -71,7 +71,7 @@ class MediaDownloaderBot(object):
 
         # Add the handler to the logger
         self.logger.addHandler(stream_handler)
-        
+
         if log_file:
             file_handler = logging.FileHandler(log_file)
             file_handler.setFormatter(formatter)
@@ -320,7 +320,7 @@ class MediaDownloaderBot(object):
         private_chat_id: str = self._user_to_chat_id[user_id]
 
         if "?" in query:
-            query = query[0:query.index("?")+1]
+            query = query[0:query.index("?")]
 
         self.logger.info(f'Received inline download query: "{query}"')
         self.logger.info(update)
@@ -329,10 +329,13 @@ class MediaDownloaderBot(object):
             return
 
         self.logger.info(f'Received inline download query: "{query}"')
+        
+        split_query: List[str] = query.split(" ")
+        url: str = split_query[0]
 
         found: bool = False
         for prefix in MediaDownloaderBot.valid_url_prefixes:
-            if prefix in query:
+            if prefix in url:
                 found = True
                 break
 
@@ -344,11 +347,11 @@ class MediaDownloaderBot(object):
             video_id: str = str(uuid.uuid4())
             video_path: str = os.path.join("./video", f"{video_id}.mp4")
             self.logger.info(f'Will save reel to file "{video_path}"\n')
-            self._download_media(query, output_path=video_path)
+            self._download_media(url, output_path=video_path)
             self.logger.info(
                 f'Successfully downloaded Instagram reel to file "{video_path}"\n\n')
         except Exception as ex:
-            self.logger.error(f'Failed to download video at URL "{query}"')
+            self.logger.error(f'Failed to download video at URL "{url}"')
             self.logger.error(ex)
             self.logger.error(traceback.format_exc())
 
@@ -377,7 +380,10 @@ class MediaDownloaderBot(object):
 
             return
 
-        message = await context.bot.send_video(chat_id=private_chat_id, video=open(video_path, "rb"))
+        message = await context.bot.send_video(
+            chat_id=private_chat_id,
+            video=open(video_path, "rb")
+        )
 
         assert message.video
 
@@ -386,12 +392,19 @@ class MediaDownloaderBot(object):
 
         # You now have access to file.file_id
         file_id = file.file_id
+        
+        if len(split_query) > 0:
+            caption:str = split_query[1]
+        else:
+            caption:str = ""
 
         results = [
             InlineQueryResultCachedVideo(
                 id="inline-video-1",
                 video_file_id=file_id,
                 title="Pre-uploaded video",
+                caption=caption,
+                description=caption,
             ),
         ]
 
@@ -486,10 +499,10 @@ class MediaDownloaderBot(object):
                     self.logger.error(traceback.format_exc())
 
                     if "Restricted Video" in str(ex):
-                        await update.message.reply_text(f"⚠️ Failed to download the requested video. Video is age restricted, and downloading age restricted videos is not supported at this time. Sorry!", 
+                        await update.message.reply_text(f"⚠️ Failed to download the requested video. Video is age restricted, and downloading age restricted videos is not supported at this time. Sorry!",
                                                         reply_to_message_id=update.message.message_id)
                     else:
-                        await update.message.reply_text(f"⚠️ Failed to download the requested video. Sorry!", 
+                        await update.message.reply_text(f"⚠️ Failed to download the requested video. Sorry!",
                                                         reply_to_message_id=update.message.message_id)
 
                     return None
